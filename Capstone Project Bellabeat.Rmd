@@ -1,0 +1,169 @@
+---
+title: "Google Data Analytics Capstone Project: Bellabeat"
+author: "Edgar C."
+date: "2024-10-08"
+output: html_document
+---
+
+# Introduction
+In this project, we analyze Bellabeat's smart device data to understand user activity levels and provide actionable business insights to improve engagement and sales.
+
+
+```{r}
+library("tidyverse")
+
+# Load the dataset
+archive <- read_csv("C:/Users/Patron/Downloads/archive.zip")
+summary(archive)
+```
+# Data Cleaning
+We will start by cleaning the dataset to ensure it’s ready for analysis, including converting date formats, removing duplicates, and handling missing values.
+```{r}
+# Convert date format and remove duplicates
+clean_archive <- archive %>%
+  mutate(ActivityDate = lubridate::mdy(ActivityDate)) %>%
+  distinct()
+
+# Check for missing values
+colSums(is.na(clean_archive))
+```
+# Data Exploration
+Summarize daily activity
+Here, we summarize the data to observe user activity trends over time and calculate the mean steps and calories burned per day.
+```{r}
+# Summarize daily activity
+daily_activity_summary <- clean_archive %>%
+  group_by(ActivityDate) %>%
+  summarise(mean_steps = mean(TotalSteps, na.rm = TRUE),
+            mean_calories = mean(Calories, na.rm = TRUE))
+
+# View daily summary
+head(daily_activity_summary)
+```
+# Visualizations
+Line Plot of Average Daily Steps
+This plot visualizes the trend in average daily steps over time.
+```{r}
+# Line plot for daily total steps
+ggplot(daily_activity_summary, aes(x = ActivityDate, y = mean_steps)) +
+  geom_line(color = "blue") +
+  labs(title = "Average Steps Per Day", x = "Date", y = "Mean Steps") +
+  theme_minimal()
+```
+
+# User Segmentation by Activity Levels
+We categorize users into "Sedentary," "Moderately Active," and "Highly Active" based on their total steps.
+```{r}
+# Categorize users based on TotalSteps
+clean_archive <- clean_archive %>%
+  mutate(activity_level = case_when(
+    TotalSteps < 5000 ~ "Sedentary",
+    TotalSteps >= 5000 & TotalSteps < 10000 ~ "Moderately Active",
+    TotalSteps >= 10000 ~ "Highly Active"
+  ))
+
+# Bar plot for activity levels
+ggplot(clean_archive, aes(x = activity_level, fill = activity_level)) +
+  geom_bar() +
+  labs(title = "User Activity Levels", x = "Activity Level", y = "Count") +
+  scale_fill_brewer(palette = "Set3") +
+  theme_minimal()
+```
+
+#  Correlation Between Steps and Calories Burned
+We examine the relationship between the number of steps taken and the calories burned using a scatter plot.
+```{r}
+# Scatter plot of TotalSteps vs Calories burned with regression line
+ggplot(clean_archive, aes(x = TotalSteps, y = Calories)) +
+  geom_point(alpha = 0.5, color = "green") +
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  labs(title = "Total Steps vs Calories Burned", x = "Total Steps", y = "Calories") +
+  theme_minimal()
+```
+
+# Average Steps and Calories by Week
+To reduce daily fluctuations, we summarize the data by week and plot average steps and calories burned.
+```{r}
+# Convert ActivityDate to week number
+clean_archive <- clean_archive %>%
+  mutate(week = as.integer(format(ActivityDate, "%U")))
+
+# Summarize mean steps and calories per week
+weekly_summary <- clean_archive %>%
+  group_by(week) %>%
+  summarise(mean_steps = mean(TotalSteps, na.rm = TRUE),
+            mean_calories = mean(Calories, na.rm = TRUE))
+
+# Plot average steps per week
+ggplot(weekly_summary, aes(x = week, y = mean_steps)) +
+  geom_line(color = "blue") +
+  labs(title = "Average Steps per Week", x = "Week", y = "Average Steps") +
+  theme_minimal()
+```
+
+# Calories Burned by Activity Level
+We analyze how calories burned vary across different activity levels.
+```{r}
+# Bar plot to compare average calories burned by activity level
+activity_summary <- clean_archive %>%
+  group_by(activity_level) %>%
+  summarise(mean_calories = mean(Calories, na.rm = TRUE))
+
+ggplot(activity_summary, aes(x = activity_level, y = mean_calories, fill = activity_level)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Average Calories Burned by Activity Level", x = "Activity Level", y = "Mean Calories") +
+  theme_minimal()
+```
+
+# Correlation Between Steps and Calories Burned
+We examine the relationship between steps taken and calories burned using a scatter plot.
+```{r}
+# Scatter plot of TotalSteps vs Calories burned with regression line
+ggplot(clean_archive, aes(x = TotalSteps, y = Calories)) +
+  geom_point(alpha = 0.5, color = "green") +
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  labs(title = "Total Steps vs Calories Burned", x = "Total Steps", y = "Calories") +
+  theme_minimal()
+```
+
+# Key Findings:
+**Daily Activity Fluctuations** – There are noticeable fluctuations in daily step counts, with some days showing significantly lower activity compared to others, indicating potential engagement gaps.
+
+**Positive Correlation Between Steps and Calories Burned** – There is a strong positive correlation between total steps and calories burned, confirming that increased activity leads to higher energy expenditure across all user groups.
+
+**User Segmentation by Activity Level** – The user base is segmented into three groups:
+
+**Highly Active**: Users taking over 10,000 steps daily, representing the most engaged and active segment.
+Moderately Active: Users averaging 5,000 to 10,000 steps daily.
+Sedentary: Users taking fewer than 5,000 steps daily, representing the least engaged group with the highest potential for improvement.
+Weekly Activity Trends – Weekly step trends show a gradual increase in activity, peaking in Week 14, followed by a slight decline, indicating potential for targeted interventions around certain times.
+
+# Recommendations:
+**Target Sedentary Users with Engagement Campaigns** – Since sedentary users make up a significant portion of the user base, Bellabeat could introduce personalized challenges, in-app reminders, or motivational messages to encourage daily step goals and increase overall activity levels.
+
+**Introduce Incentives for Moderately Active Users** – To keep the moderately active segment engaged, consider offering rewards, badges, or even health insights for achieving consistent step milestones, motivating users to transition into the highly active category.
+
+**Premium Features for Highly Active Users** – Bellabeat could develop exclusive content or premium features for highly active users, such as advanced fitness insights, workout recommendations, or early access to new app features. This would enhance user retention for this highly engaged group.
+
+**Leverage Data-Driven Insights to Launch Time-Sensitive Campaigns** – Based on weekly activity trends, there may be specific weeks or periods where user engagement drops. Bellabeat could time promotional campaigns, fitness events, or community challenges during these lower activity periods to keep engagement consistent year-round.
+
+**Highlight the Calories Burned Benefit** – The clear correlation between steps and calories burned can be used as a marketing point. Users could receive personalized summaries or notifications showing how their activity directly contributes to their health, reinforcing the benefit of staying active.
+
+### 7. References
+
+The analysis and code used here can be found on:
+
+- [Datascienceportfolio: Project Repository](https://www.kaggle.com/code/edgarcontreras2321/notebookae74010603/edit)
+
+Resources and guidelines for Google Data Analytics:
+
+- [Case Study Guidelines](https://github.com/v-Vahe/FItnessTracker_Case_Study/blob/main/Case-Study-Guidelines.pdf)
+
+For data privacy information:
+
+- [Fitness Tracker Data Privacy](https://openeffect.ca/fitness-trackers/Fitness_Tracker_Questions.pdf)
+- [Bellabeat's Privacy Policy](https://bellabeat.com/privacy-policy/)
+
+Data source:
+
+- [Kaggle Dataset Link](https://www.kaggle.com/arashnic/fitbit)
